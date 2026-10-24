@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberGuard - Link Risk Detector</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Configuration for custom colors and dark mode -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              bg: '#0a0f1d',
+              card: '#111827',
+              accent: '#00f0ff',
+              safe: '#10b981',
+              warning: '#f59e0b',
+              danger: '#ef4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Smooth meter animation transition */
+    .meter-bar {
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+    }
+    /* Custom glowing shadow effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    }
+    .glow-safe {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+    }
+    .glow-warning {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    }
+    .glow-danger {
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen flex flex-col justify-between font-sans antialiased selection:bg-cyan-500 selection:text-black">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-md mx-auto p-4 flex-1 flex flex-col justify-center">
+
+    <!-- Header Section -->
+    <header class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-cyan-950/50 border border-cyan-500/30 text-cyan-400 mb-3 glow-cyan">
+        <i class="fa-solid fa-shield-halved text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
+        CyberGuard <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PRO</span>
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">Instant Mobile Link Threat & Phishing Scanner</p>
+    </header>
+
+    <!-- Scanner Card -->
+    <main class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
+      
+      <!-- Input Section -->
+      <div class="space-y-3">
+        <label for="urlInput" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+          Enter URL to Analyze
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <i class="fa-solid fa-link text-sm"></i>
+          </div>
+          <input 
+            type="url" 
+            id="urlInput" 
+            placeholder="https://example.com/login" 
+            class="w-full pl-10 pr-10 py-3 bg-slate-950/80 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+          />
+          <button 
+            type="button"
+            id="clearBtn" 
+            onclick="clearInput()" 
+            class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 text-sm">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Action Buttons & Quick Presets -->
+        <div class="flex gap-2 pt-1">
+          <button 
+            onclick="startScan()" 
+            id="scanBtn"
+            class="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm">
+            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            <span>Scan Link</span>
+          </button>
+        </div>
+
+        <!-- Quick Test URLs (Helpful for rapid 10-min testing) -->
+        <div class="pt-2">
+          <p class="text-[10px] text-slate-400 mb-1 font-medium">Quick Test Examples:</p>
+          <div class="flex flex-wrap gap-1.5 text-xs">
+            <button onclick="setExample('https://google.com')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 text-[11px] border border-slate-700/50">Safe Link</button>
+            <button onclick="setExample('http://bit.ly/secure-account-verify')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 text-[11px] border border-slate-700/50">Suspicious</button>
+            <button onclick="setExample('http://192.168.1.1/login-bank-update-verify-secure-link-claim-bonus')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 text-[11px] border border-slate-700/50">High Risk</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scanning Progress Overlay (Simulated) -->
+      <div id="scanningState" class="hidden py-8 text-center space-y-3">
+        <div class="inline-block relative">
+          <div class="w-12 h-12 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin"></div>
+          <i class="fa-solid fa-microchip absolute inset-0 m-auto text-cyan-400 text-xs h-fit w-fit"></i>
+        </div>
+        <p class="text-xs font-semibold text-cyan-400 animate-pulse">Analyzing Security Signals & Heuristics...</p>
+      </div>
+
+      <!-- Scan Results Output Block -->
+      <div id="resultSection" class="hidden mt-6 pt-5 border-t border-slate-800/80 space-y-4">
+        
+        <!-- Risk Level Badge & Score Header -->
+        <div class="flex items-center justify-between">
+          <div>
+            <span id="riskCategoryBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+              <!-- Dynamic Category Badge -->
+            </span>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400 block">Risk Score</span>
+            <span id="riskScoreValue" class="text-lg font-black text-white">0%</span>
+          </div>
+        </div>
+
+        <!-- Visual Risk Meter -->
+        <div class="space-y-1">
+          <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+            <div id="riskMeter" class="meter-bar h-full rounded-full w-0 bg-emerald-500"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-500 font-medium px-0.5">
+            <span>0 (Safe)</span>
+            <span>50 (Caution)</span>
+            <span>100 (Critical)</span>
+          </div>
+        </div>
+
+        <!-- Analysis Verdict Description -->
+        <div id="verdictBox" class="p-3 rounded-xl border text-xs leading-relaxed">
+          <!-- Dynamic text -->
+        </div>
+
+        <!-- Risk Factors Checklist -->
+        <div class="space-y-2">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+            <span>Threat Indicators</span>
+            <span id="factorsCount" class="text-[10px] text-slate-400 font-normal"></span>
+          </h3>
+
+          <div id="checklistContainer" class="space-y-2">
+            <!-- Dynamic checklist items -->
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Security Tips Footer -->
+    <footer class="mt-6 text-center text-slate-500 text-[11px] space-y-1">
+      <p><i class="fa-solid fa-lock text-cyan-500/70 mr-1"></i> Client-side heuristic scan • Fast & Private</p>
+    </footer>
+
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    const urlInput = document.getElementById('urlInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const resultSection = document.getElementById('resultSection');
+    const scanningState = document.getElementById('scanningState');
+    const scanBtn = document.getElementById('scanBtn');
+
+    // Toggle clear input button visibility
+    urlInput.addEventListener('input', () => {
+      clearBtn.classList.toggle('hidden', !urlInput.value);
+    });
+
+    function clearInput() {
+      urlInput.value = '';
+      clearBtn.classList.add('hidden');
+      resultSection.classList.add('hidden');
+      urlInput.focus();
+    }
+
+    function setExample(url) {
+      urlInput.value = url;
+      clearBtn.classList.remove('hidden');
+      startScan();
+    }
+
+    function startScan() {
+      let rawUrl = urlInput.value.trim();
+      
+      if (!rawUrl) {
+        showCustomToast('Please enter a URL first!');
+        return;
+      }
+
+      // Automatically add https protocol if missing for checking
+      if (!/^https?:\/\//i.test(rawUrl)) {
+        rawUrl = 'https://' + rawUrl;
+        urlInput.value = rawUrl;
+      }
+
+      // Show spinner, hide results
+      resultSection.classList.add('hidden');
+      scanningState.classList.remove('hidden');
+      scanBtn.disabled = true;
+      scanBtn.classList.add('opacity-70');
+
+      // Simulate network/heuristics delay for smooth UX (400ms)
+      setTimeout(() => {
+        scanningState.classList.add('hidden');
+        scanBtn.disabled = false;
+        scanBtn.classList.remove('opacity-70');
+        analyzeUrl(rawUrl);
+      }, 450);
+    }
+
+    function analyzeUrl(urlStr) {
+      let urlObj;
+      try {
+        urlObj = new URL(urlStr);
+      } catch (e) {
+        showCustomToast('Invalid URL format!');
+        return;
+      }
+
+      const factors = [];
+      let riskScore = 0;
+
+      // 1. Check HTTPS Protocol
+      const isHttps = urlObj.protocol === 'https:';
+      if (!isHttps) {
+        riskScore += 25;
+        factors.push({
+          title: 'Missing HTTPS Encryption',
+          desc: 'Connection is unencrypted (HTTP). Data transmitted can be intercepted.',
+          detected: true,
+          severity: 'high'
+        });
+      } else {
+        factors.push({
+          title: 'HTTPS Secure Protocol',
+          desc: 'Valid SSL/TLS protocol detected.',
+          detected: false,
+          severity: 'safe'
+        });
+      }
+
+      // 2. Check for Direct IP Domain
+      const hostname = urlObj.hostname;
+      const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+      if (isIpAddress) {
+        riskScore += 35;
+        factors.push({
+          title: 'Direct IP Address Used',
+          desc: 'Domain uses a raw IP address instead of a domain name (Common in scams).',
+          detected: true,
+          severity: 'high'
+        });
+      } else {
+        factors.push({
+          title: 'Standard Domain Name',
+          desc: 'Uses regular domain hostname.',
+          detected: false,
+          severity: 'safe'
+        });
+      }
+
+      // 3. Check for URL Shorteners
+      const shortenerRegex = /(bit\.ly|tinyurl\.com|t\.co|goo\.gl|is\.gd|buff\.ly|ow\.ly|rb\.gy|cutt\.ly)/i;
+      const isShortener = shortenerRegex.test(hostname) || shortenerRegex.test(urlStr);
+      if (isShortener) {
+        riskScore += 20;
+        factors.push({
+          title: 'URL Shortener Detected',
+          desc: 'Redirect link hides the actual destination website URL.',
+          detected: true,
+          severity: 'medium'
+        });
+      } else {
+        factors.push({
+          title: 'Direct Destination Link',
+          desc: 'No known URL shortening redirect service detected.',
+          detected: false,
+          severity: 'safe'
+        });
+      }
+
+      // 4. Check Suspicious Phishing Keywords
+      const phishingKeywords = ['login', 'verify', 'account', 'bank', 'secure', 'update', 'claim', 'free', 'wallet', 'password', 'support', 'signin', 'bonus'];
+      const matchedKeywords = phishingKeywords.filter(kw => urlStr.toLowerCase().includes(kw));
+      if (matchedKeywords.length > 0) {
+        riskScore += (matchedKeywords.length * 15);
+        factors.push({
+          title: `Sensitive Keywords Detected (${matchedKeywords.slice(0, 3).join(', ')})`,
+          desc: 'Contains high-target phishing trigger words in the URL structure.',
+          detected: true,
+          severity: matchedKeywords.length > 1 ? 'high' : 'medium'
+        });
+      } else {
+        factors.push({
+          title: 'No Phishing Keywords',
+          desc: 'No sensitive credentials/financial keywords found in the path.',
+          detected: false,
+          severity: 'safe'
+        });
+      }
+
+      // 5. Extremely Long URL Length Check
+      const isLongUrl = urlStr.length > 65;
+      if (isLongUrl) {
+        riskScore += 15;
+        factors.push({
+          title: `Excessive Length (${urlStr.length} chars)`,
+          desc: 'Unusually long links are often used to hide malicious subdomains on mobile.',
+          detected: true,
+          severity: 'medium'
+        });
+      } else {
+        factors.push({
+          title: 'Normal URL Length',
+          desc: 'Link length is concise and standard.',
+          detected: false,
+          severity: 'safe'
+        });
+      }
+
+      // Cap Risk Score at 100
+      riskScore = Math.min(riskScore, 100);
+
+      // Render Results to UI
+      renderResults(riskScore, factors);
+    }
+
+    function renderResults(score, factors) {
+      const badge = document.getElementById('riskCategoryBadge');
+      const scoreVal = document.getElementById('riskScoreValue');
+      const meter = document.getElementById('riskMeter');
+      const verdictBox = document.getElementById('verdictBox');
+      const checklistContainer = document.getElementById('checklistContainer');
+      const factorsCount = document.getElementById('factorsCount');
+
+      scoreVal.innerText = `${score}%`;
+
+      // Set category styling according to score
+      let categoryText = '';
+      let badgeStyle = '';
+      let meterColor = '';
+      let verdictText = '';
+      let verdictStyle = '';
+
+      if (score < 30) {
+        categoryText = 'Low Risk (Safe)';
+        badgeStyle = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 glow-safe';
+        meterColor = '#10b981';
+        verdictText = '<strong>Verdict:</strong> This link appears standard and safe to visit. Always maintain general online security awareness.';
+        verdictStyle = 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200';
+      } else if (score < 65) {
+        categoryText = 'Medium Risk (Caution)';
+        badgeStyle = 'bg-amber-500/20 text-amber-400 border border-amber-500/40 glow-warning';
+        meterColor = '#f59e0b';
+        verdictText = '<strong>Verdict:</strong> Caution advised! This link has suspicious elements (e.g., shortened or containing sensitive keywords). Verify the sender before opening.';
+        verdictStyle = 'bg-amber-950/30 border-amber-500/30 text-amber-200';
+      } else {
+        categoryText = 'High Risk (Dangerous)';
+        badgeStyle = 'bg-rose-500/20 text-rose-400 border border-rose-500/40 glow-danger';
+        meterColor = '#ef4444';
+        verdictText = '<strong>Verdict:</strong> High threat potential! Multiple phishing or malicious link indicators detected. Do not log in or provide personal details.';
+        verdictStyle = 'bg-rose-950/30 border-rose-500/30 text-rose-200';
+      }
+
+      badge.className = `inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${badgeStyle}`;
+      badge.innerHTML = `<i class="fa-solid ${score < 30 ? 'fa-circle-check' : score < 65 ? 'fa-triangle-exclamation' : 'fa-skull-crossbones'}"></i> ${categoryText}`;
+
+      // Update meter
+      setTimeout(() => {
+        meter.style.width = `${score}%`;
+        meter.style.backgroundColor = meterColor;
+      }, 50);
+
+      // Update Verdict Box
+      verdictBox.className = `p-3 rounded-xl border text-xs leading-relaxed ${verdictStyle}`;
+      verdictBox.innerHTML = verdictText;
+
+      // Render Threat Checklist
+      const detectedCount = factors.filter(f => f.detected).length;
+      factorsCount.innerText = `${detectedCount} threat factor(s) detected`;
+
+      checklistContainer.innerHTML = factors.map(item => {
+        let iconClass = '';
+        let itemBg = '';
+        let titleColor = '';
+
+        if (item.detected) {
+          if (item.severity === 'high') {
+            iconClass = 'fa-circle-xmark text-rose-400';
+            itemBg = 'bg-rose-950/20 border-rose-900/40';
+            titleColor = 'text-rose-300';
+          } else {
+            iconClass = 'fa-triangle-exclamation text-amber-400';
+            itemBg = 'bg-amber-950/20 border-amber-900/40';
+            titleColor = 'text-amber-300';
+          }
+        } else {
+          iconClass = 'fa-circle-check text-emerald-400';
+          itemBg = 'bg-slate-950/50 border-slate-800';
+          titleColor = 'text-slate-300';
+        }
+
+        return `
+          <div class="p-2.5 rounded-xl border ${itemBg} flex items-start gap-2.5 transition-all">
+            <i class="fa-solid ${iconClass} text-sm mt-0.5"></i>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold ${titleColor} flex items-center justify-between">
+                <span>${item.title}</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5 leading-tight">${item.desc}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Display results section smoothly
+      resultSection.classList.remove('hidden');
+    }
+
+    // Custom non-blocking Toast for mobile alerts
+    function showCustomToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 bg-cyan-500 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold shadow-xl z-50 transition-all transform duration-300';
+      toast.innerText = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
