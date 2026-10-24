@@ -445,6 +445,30 @@
 
       // Display results section smoothly
       resultSection.classList.remove('hidden');
+      // Save scan to recent history
+const history = JSON.parse(
+  localStorage.getItem('linkScanHistory') || '[]'
+);
+
+history.unshift({
+  url: urlInput.value.trim(),
+  result: categoryText + ' (' + score + '%)'
+});
+
+localStorage.setItem(
+  'linkScanHistory',
+  JSON.stringify(history.slice(0, 10))
+);
+
+const historyList = document.getElementById('scan-history');
+if (historyList) {
+  historyList.innerHTML = '';
+  history.slice(0, 10).forEach(function(item) {
+    const li = document.createElement('li');
+    li.textContent = item.url + ' — ' + item.result;
+    historyList.appendChild(li);
+  });
+}
     }
 
     // Custom non-blocking Toast for mobile alerts
@@ -506,8 +530,5 @@ async function checkLink() {
   });
 })();
 </script>
-</body>
-
-
 </body>
 </html>
