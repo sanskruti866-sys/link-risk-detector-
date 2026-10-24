@@ -476,6 +476,38 @@ async function checkLink() {
   }
 }
 </script>
+  
+<section id="history-section" style="margin: 20px auto; max-width: 700px; padding: 16px;">
+  <h2>Recent Scan History</h2>
+  <ul id="scan-history">
+    <li>No links checked yet.</li>
+  </ul>
+  <button onclick="localStorage.removeItem('linkScanHistory'); location.reload();">
+    Clear History
+  </button>
+</section>
+
+<script>
+(function () {
+  const historyList = document.getElementById('scan-history');
+  const saved = JSON.parse(localStorage.getItem('linkScanHistory') || '[]');
+
+  historyList.innerHTML = '';
+
+  if (saved.length === 0) {
+    historyList.textContent = 'No links checked yet.';
+    return;
+  }
+
+  saved.slice(0, 10).forEach(function (item) {
+    const li = document.createElement('li');
+    li.textContent = item.url + ' — ' + item.result;
+    historyList.appendChild(li);
+  });
+})();
+</script>
+</body>
+
 
 </body>
 </html>
